@@ -1,6 +1,11 @@
 __pycache__/
 .pytest_cache/
 .venv/
+build/
+cmake-build*/
+CMakeFiles/
+CMakeCache.txt
+CTestTestfile.cmake
 *.pyc
 *.pyo
 *.egg-info/

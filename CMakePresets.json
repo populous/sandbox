@@ -1,0 +1,37 @@
+{
+  "version": 3,
+  "cmakeMinimumRequired": {
+    "major": 3,
+    "minor": 20,
+    "patch": 0
+  },
+  "configurePresets": [
+    {
+      "name": "default",
+      "binaryDir": "${sourceDir}/build",
+      "cacheVariables": {
+        "ARITHMETIC_ENABLE_GENERAL": "ON",
+        "ARITHMETIC_ENABLE_TEST": "ON",
+        "ARITHMETIC_ENABLE_DOC": "ON",
+        "ARITHMETIC_ENABLE_PACT": "OFF",
+        "ARITHMETIC_ENABLE_PROFILING": "OFF"
+      }
+    }
+  ],
+  "buildPresets": [
+    {
+      "name": "default",
+      "configurePreset": "default"
+    }
+  ],
+  "testPresets": [
+    {
+      "name": "default",
+      "configurePreset": "default",
+      "configuration": "Debug",
+      "output": {
+        "outputOnFailure": true
+      }
+    }
+  ]
+}

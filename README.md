@@ -49,8 +49,37 @@ The repository is structured to run across the full development path:
 - GitHub Codespaces
 - GitHub Actions
 
-## Testing
+## CMake and CTest workflow
+
+This project is now configured as a Python-first CMake project. The test suite is wrapped through CTest, so the project can be executed in local, remote, Codespaces, and GitHub Actions environments with the same entry points.
 
 ```bash
-pytest
+cmake -S . -B build
+cmake --build build
+ctest --test-dir build -C Debug --output-on-failure
+```
+
+Additional project options can be customized from CMake:
+
+```bash
+cmake -S . -B build \
+  -DARITHMETIC_ENABLE_GENERAL=ON \
+  -DARITHMETIC_ENABLE_TEST=ON \
+  -DARITHMETIC_ENABLE_DOC=ON \
+  -DARITHMETIC_ENABLE_PACT=ON \
+  -DARITHMETIC_ENABLE_PROFILING=ON
+```
+
+The CTest layer wraps the pytest suite by invoking:
+
+```bash
+python -m pytest -q tests
+```
+
+A presets file is also included for a default CMake build configuration:
+
+```bash
+cmake --preset default
+cmake --build --preset default
+ctest --preset default
 ```
