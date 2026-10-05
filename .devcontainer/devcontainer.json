@@ -1,0 +1,13 @@
+{
+  "name": "arithmetic-grammar",
+  "image": "mcr.microsoft.com/devcontainers/python:1-3.12-bookworm",
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "ms-python.python",
+        "ms-python.vscode-pylance"
+      ]
+    }
+  },
+  "postCreateCommand": "python -m pip install --upgrade pip pytest && python -m pip install -e ."
+}

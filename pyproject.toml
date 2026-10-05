@@ -1,0 +1,15 @@
+[project]
+name = "arithmetic-registers"
+version = "0.1.0"
+description = "Arithmetic grammar and register-driven evaluator"
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = []
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0",
+]
+
+[tool.pytest.ini_options]
+pythonpath = ["src"]

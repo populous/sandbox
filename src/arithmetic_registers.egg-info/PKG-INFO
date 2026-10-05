@@ -1,0 +1,65 @@
+Metadata-Version: 2.4
+Name: arithmetic-registers
+Version: 0.1.0
+Summary: Arithmetic grammar and register-driven evaluator
+Requires-Python: >=3.11
+Description-Content-Type: text/markdown
+Provides-Extra: dev
+Requires-Dist: pytest>=8.0; extra == "dev"
+
+# Arithmetic Grammar and Register Flow
+
+This repository provides a compact arithmetic grammar using EBNF and ANTLR-style syntax while keeping runtime state in a register-driven flow. The goal is to preserve a clean grammar boundary and move value handling to named registers.
+
+## What is included
+
+- EBNF grammar for arithmetic expressions
+- ANTLR-compatible `g4` grammar for the same language
+- A lightweight Python parser and evaluator
+- A register store for variable resolution
+- CI automation for GitHub Actions
+- A dev container setup for Codespaces and local development
+
+## Supported operation model
+
+The grammar focuses on syntax only:
+
+- arithmetic operators: `+`, `-`, `*`, `/`
+- unary signs: `+x`, `-x`
+- parentheses: `(a + b)`
+- identifiers and numeric literals
+
+The execution layer resolves names from a register store instead of embedding runtime behavior directly into the grammar.
+
+## Local usage
+
+```bash
+python -m arithmetic_registers "a + b * 2" --register a=10 --register b=3
+```
+
+This prints:
+
+```text
+16.0
+```
+
+## Grammar files
+
+- `grammar/Arithmetic.ebnf`
+- `grammar/Arithmetic.g4`
+
+## Environment coverage
+
+The repository is structured to run across the full development path:
+
+- sandbox
+- local workstation
+- remote checkout
+- GitHub Codespaces
+- GitHub Actions
+
+## Testing
+
+```bash
+pytest
+```
