@@ -54,3 +54,7 @@ The repository is structured to run across the full development path:
 ```bash
 pytest
 ```
+
+## User sandbox
+
+Self-hosted runner 기반 사용자 정의 sandbox는 [docs/USER_SANDBOX.md](docs/USER_SANDBOX.md)를 참고하세요.
