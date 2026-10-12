@@ -37,10 +37,13 @@ $cmdFile = Join-Path $out 'command.ps1'
 $logFile = Join-Path $out 'run.log'
 $body = @(
   '$ErrorActionPreference = ''Stop'''
+  '[Console]::OutputEncoding = [Text.Encoding]::UTF8'
+  '$OutputEncoding = [Text.Encoding]::UTF8'
   $env:SANDBOX_COMMAND
   'if ($LASTEXITCODE) { exit $LASTEXITCODE }'
 ) -join "`r`n"
-[IO.File]::WriteAllText($cmdFile, $body, $utf8)
+# UTF-8 *with* BOM: Windows PowerShell 5.1 reads BOM-less scripts as ANSI.
+[IO.File]::WriteAllText($cmdFile, $body, (New-Object System.Text.UTF8Encoding($true)))
 [IO.File]::WriteAllText($logFile, '', $utf8)
 
 $shell = $env:SANDBOX_SHELL
@@ -49,6 +52,8 @@ if (-not $shell) {
 }
 
 $started = (Get-Date).ToUniversalTime().ToString('yyyy-MM-ddTHH:mm:ssZ')
+# Decode child output as UTF-8 (default console code page would mangle non-ASCII).
+try { [Console]::OutputEncoding = [Text.Encoding]::UTF8 } catch { }
 Push-Location $workPath
 $ErrorActionPreference = 'Continue'
 & $shell -NoProfile -NonInteractive -ExecutionPolicy Bypass -File $cmdFile 2>&1 | ForEach-Object {

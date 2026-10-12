@@ -1,0 +1,31 @@
+name: sandbox-ps
+
+# Regression tests for scripts/sandbox/run.ps1 on GitHub-hosted Windows
+# (Windows PowerShell 5.1 and PowerShell 7). Hosted runners only; the home PC is never used.
+
+on:
+  pull_request:
+    paths:
+      - 'scripts/sandbox/**'
+      - '.github/workflows/sandbox-ps.yml'
+      - '.github/workflows/sandbox-run.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  run-ps1:
+    runs-on: windows-latest
+    timeout-minutes: 10
+    strategy:
+      fail-fast: false
+      matrix:
+        shell: [powershell, pwsh]
+    defaults:
+      run:
+        shell: ${{ matrix.shell }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Test run.ps1
+        run: ./scripts/sandbox/test-run.ps1
