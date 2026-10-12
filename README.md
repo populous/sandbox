@@ -54,3 +54,7 @@ The repository is structured to run across the full development path:
 ```bash
 pytest
 ```
+
+## Thread Sync Protocol
+
+Perplexity 쓰레드 ↔ git 브랜치 동기화 규약은 [docs/THREAD_SYNC_PROTOCOL.md](docs/THREAD_SYNC_PROTOCOL.md), 도구는 `tools/pplx_thread.py`입니다.
