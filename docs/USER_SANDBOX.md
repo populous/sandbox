@@ -2,7 +2,7 @@
 
 Perplexity의 기본 sandbox를 대체하는 **사용자 정의 sandbox**입니다.
 명령은 사용자가 소유한 Windows PC(self-hosted runner)에서 PowerShell로 실행되고,
-결과는 GitHub Actions 로그·artifact·sha256 manifest로 남습니다.
+결과는 **GitHub(git)에 직접 저장**됩니다. Actions artifact는 사용하지 않습니다.
 
 ```
 Perplexity ──(gh: branch/commit/PR, workflow run)──► populous/sandbox
@@ -12,7 +12,8 @@ Perplexity ──(gh: branch/commit/PR, workflow run)──► populous/sandbox
                           (사용자 Windows PC — 사용자가 직접 접근 가능)
                                                       │
                                                       ▼
-                        run.log · command.ps1 · artifacts\ · manifest.json
+      thread/<id> ref로 실행 → threads/<id>/runs/<stamp>-<label>-win/ 커밋·push
+      그 외 ref            → Job summary에만 표시 (저장 안 함)
 ```
 
 ## 1. 사전 설치 (1회)
@@ -63,17 +64,17 @@ gh api repos/populous/sandbox/actions/runners --jq '.runners[] | {name,status,la
 `command`는 **PowerShell** 문법입니다.
 
 ```powershell
-gh workflow run sandbox-run --repo populous/sandbox --ref main `
+gh workflow run sandbox-run --repo populous/sandbox --ref thread/f7bfd4da `
   -f command='python -m pip install -e . pytest; python -m pytest -q' -f run_label='smoke'
 gh run list --repo populous/sandbox --workflow sandbox-run -L 3
 gh run watch <run-id> --repo populous/sandbox
-gh run download <run-id> --repo populous/sandbox -D .\out
+git switch thread/f7bfd4da; git pull     # 결과는 threads/f7bfd4da/runs/ 에 있음
 ```
 
-명령 안에서 `$env:SANDBOX_ARTIFACTS`에 쓴 파일은 artifact로 업로드되고 manifest에 sha256이 기록됩니다.
+명령 안에서 `$env:PPLX_RUN_OUT`에 쓴 파일은 run 폴더의 `outputs\`로 커밋되고 manifest에 sha256이 기록됩니다. 5 MB 초과 파일이 있으면 커밋을 거부합니다.
 
 ```powershell
--f command='python -m arithmetic_registers "a+b*2" --register a=10 --register b=3 | Set-Content "$env:SANDBOX_ARTIFACTS\result.txt"'
+-f command='python -m arithmetic_registers "a+b*2" --register a=10 --register b=3 | Set-Content "$env:PPLX_RUN_OUT\result.txt"'
 ```
 
 종료 코드 규칙:
@@ -103,7 +104,7 @@ run_label: <라벨>
 - `sandbox-run`은 `workflow_dispatch` 전용 — push/pull_request 트리거 없음
 - 작업은 `github.actor == github.repository_owner`일 때만 실행
 - `ci.yml`은 GitHub-hosted `ubuntu-latest`만 사용 (self-hosted 라벨 금지)
-- `permissions: contents: read`, `concurrency: user-sandbox`
+- `permissions: contents: write`는 `thread/*` 브랜치에 결과를 push할 때만 사용, `concurrency: user-sandbox`
 
 추가 권장 설정 (Settings → Actions → General):
 
@@ -115,7 +116,7 @@ run_label: <라벨>
 
 | 경로 | 역할 |
 |---|---|
-| `.github/workflows/sandbox-run.yml` | 수동 실행 workflow (Windows, PowerShell) |
+| `.github/workflows/sandbox-run.yml` | 수동 실행 workflow (Windows, PowerShell, 결과 git 커밋) |
 | `scripts/sandbox/run.ps1` | 명령 실행, 로그, manifest 생성 (PS 5.1 / 7 호환) |
 | `scripts/runner/setup-runner.ps1` | runner 등록 / `-Service` 서비스 설치 |
 | `scripts/runner/remove-runner.ps1` | runner 해제 |

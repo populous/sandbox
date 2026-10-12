@@ -3,8 +3,10 @@
   Env inputs : SANDBOX_COMMAND (required), SANDBOX_WORKDIR (default "."),
                SANDBOX_LABEL (default "manual"), SANDBOX_OUT (output dir),
                SANDBOX_SHELL (optional: powershell.exe | pwsh)
-  Outputs    : run.log, command.ps1, artifacts\*, manifest.json in SANDBOX_OUT.
-               The command can write files to $env:SANDBOX_ARTIFACTS.
+  Outputs    : run.log, command.ps1, outputs\*, manifest.json in SANDBOX_OUT.
+               The command writes result files to $env:PPLX_RUN_OUT
+               (alias: $env:SANDBOX_ARTIFACTS). Results are stored in git, not
+               in Actions artifacts.
   Works on Windows PowerShell 5.1 and PowerShell 7+.
 #>
 $ErrorActionPreference = 'Stop'
@@ -25,9 +27,10 @@ if (-not (Test-Path -LiteralPath $workPath -PathType Container)) {
 }
 
 $out = $env:SANDBOX_OUT
-$artifacts = Join-Path $out 'artifacts'
-New-Item -ItemType Directory -Force -Path $artifacts | Out-Null
-$env:SANDBOX_ARTIFACTS = $artifacts
+$outputs = Join-Path $out 'outputs'
+New-Item -ItemType Directory -Force -Path $outputs | Out-Null
+$env:PPLX_RUN_OUT = $outputs
+$env:SANDBOX_ARTIFACTS = $outputs
 
 $utf8 = New-Object System.Text.UTF8Encoding($false)
 $cmdFile = Join-Path $out 'command.ps1'
@@ -71,7 +74,9 @@ $files = @(Get-ChildItem -LiteralPath $outFull -Recurse -File |
   } | Sort-Object path)
 
 $manifest = [ordered]@{
+  protocol     = 'pplx-thread/1'
   schema       = 'user-sandbox/manifest@1'
+  thread_id    = $env:PPLX_THREAD_ID
   label        = $env:SANDBOX_LABEL
   command      = $env:SANDBOX_COMMAND
   workdir      = $wd

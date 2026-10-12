@@ -1,12 +1,17 @@
 name: sandbox-run
 
-# User-defined sandbox: runs a command on the owner's self-hosted runner
-# (Windows PC) and stores log + sha256 manifest as artifacts.
+# User-defined sandbox: runs a PowerShell command on the owner's Windows
+# self-hosted runner. GitHub is the sandbox store:
+# - Dispatched on a thread/<id> ref -> results are committed to
+#   threads/<id>/runs/<stamp>-<label>-win/ on that branch (Thread Sync Protocol).
+# - Dispatched on any other ref   -> results are shown in the job summary only.
+# No Actions artifacts are uploaded.
 #
 # SECURITY (public repository):
 # - Only workflow_dispatch is allowed. No push / pull_request triggers, so
 #   fork PRs can never reach the self-hosted runner.
 # - The job is additionally gated to the repository owner.
+# - contents: write is used only to push to thread/* branches.
 
 on:
   workflow_dispatch:
@@ -24,12 +29,12 @@ on:
         required: false
         default: "30"
       run_label:
-        description: "Free-form label stored in the manifest"
+        description: "Run label (used in the run folder name)"
         required: false
         default: "manual"
 
 permissions:
-  contents: read
+  contents: write
 
 defaults:
   run:
@@ -50,31 +55,76 @@ jobs:
         with:
           clean: true
 
+      - name: Resolve run folder
+        id: resolve
+        env:
+          RUN_LABEL: ${{ inputs.run_label }}
+        run: |
+          $label = ($env:RUN_LABEL -replace '[^A-Za-z0-9._-]+', '-').Trim('-')
+          if (-not $label) { $label = 'run' }
+          $stamp = (Get-Date).ToUniversalTime().ToString('yyyyMMddTHHmmssZ')
+          $tid = ''
+          if ($env:GITHUB_REF_NAME -match '^thread/([A-Za-z0-9._-]{4,64})$') { $tid = $Matches[1] }
+          if ($tid) {
+            $rel = "threads/$tid/runs/$stamp-$label-win"
+            $abs = Join-Path $env:GITHUB_WORKSPACE $rel
+          } else {
+            $rel = ''
+            $abs = Join-Path $env:RUNNER_TEMP "sandbox-out-$stamp"
+          }
+          "thread=$tid" | Out-File -Append -Encoding utf8 $env:GITHUB_OUTPUT
+          "rel=$rel"    | Out-File -Append -Encoding utf8 $env:GITHUB_OUTPUT
+          "abs=$abs"    | Out-File -Append -Encoding utf8 $env:GITHUB_OUTPUT
+          "label=$label"| Out-File -Append -Encoding utf8 $env:GITHUB_OUTPUT
+
       - name: Run command in sandbox
-        id: run
         env:
           SANDBOX_COMMAND: ${{ inputs.command }}
           SANDBOX_WORKDIR: ${{ inputs.workdir }}
-          SANDBOX_LABEL: ${{ inputs.run_label }}
-          SANDBOX_OUT: ${{ runner.temp }}/sandbox-out
+          SANDBOX_LABEL: ${{ steps.resolve.outputs.label }}
+          SANDBOX_OUT: ${{ steps.resolve.outputs.abs }}
+          PPLX_THREAD_ID: ${{ steps.resolve.outputs.thread }}
         run: powershell -NoProfile -ExecutionPolicy Bypass -File scripts\sandbox\run.ps1
 
-      - name: Upload sandbox artifacts
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: sandbox-run-${{ github.run_id }}-${{ github.run_attempt }}
-          path: ${{ runner.temp }}/sandbox-out
-          if-no-files-found: warn
-          retention-days: 30
+      - name: Commit results to thread branch
+        if: always() && steps.resolve.outputs.thread != ''
+        env:
+          TID: ${{ steps.resolve.outputs.thread }}
+          REL: ${{ steps.resolve.outputs.rel }}
+          LABEL: ${{ steps.resolve.outputs.label }}
+        run: |
+          $manifestPath = Join-Path $env:REL 'manifest.json'
+          if (-not (Test-Path $manifestPath)) { Write-Host 'no manifest; nothing to commit'; exit 0 }
+          $big = Get-ChildItem -LiteralPath $env:REL -Recurse -File | Where-Object { $_.Length -gt 5MB }
+          if ($big) { $big | ForEach-Object { Write-Host "too large: $($_.FullName)" }; throw 'files > 5 MB are not committed' }
+          $m = Get-Content -Raw -Encoding UTF8 $manifestPath | ConvertFrom-Json
+          $rec = [ordered]@{ ts = (Get-Date).ToUniversalTime().ToString('yyyy-MM-ddTHH:mm:ssZ'); event = 'run';
+                             actor = 'windows-runner'; label = $env:LABEL; exit_code = $m.exit_code; path = $env:REL }
+          $utf8 = New-Object System.Text.UTF8Encoding($false)
+          [IO.File]::AppendAllText((Join-Path "threads/$env:TID" 'journal.jsonl'), (($rec | ConvertTo-Json -Compress) + "`n"), $utf8)
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -- "threads/$env:TID"
+          $msg = "thread($env:TID): run: $env:LABEL (exit $($m.exit_code))`n`nThread-Id: $env:TID`nProtocol: pplx-thread/1`nActor: windows-runner`nRun-Id: $env:GITHUB_RUN_ID"
+          git commit -q -m $msg
+          if ($LASTEXITCODE) { throw 'git commit failed' }
+          for ($i = 1; $i -le 3; $i++) {
+            git pull -q --rebase --autostash origin $env:GITHUB_REF_NAME
+            git push -q origin "HEAD:$env:GITHUB_REF_NAME"
+            if (-not $LASTEXITCODE) { Write-Host "pushed $env:REL"; exit 0 }
+            Start-Sleep -Seconds (5 * $i)
+          }
+          throw 'push failed after 3 attempts'
 
       - name: Job summary
         if: always()
         env:
-          MANIFEST: ${{ runner.temp }}/sandbox-out/manifest.json
+          MANIFEST: ${{ steps.resolve.outputs.abs }}/manifest.json
+          REL: ${{ steps.resolve.outputs.rel }}
         run: |
           if (Test-Path $env:MANIFEST) {
             $m = Get-Content -Raw -Encoding UTF8 $env:MANIFEST
-            $md = "## sandbox-run`n``````json`n$m`n``````"
+            $where = if ($env:REL) { "Stored in git: ``$env:GITHUB_REF_NAME`` / ``$env:REL``" } else { 'Not stored (non-thread ref).' }
+            $md = "## sandbox-run`n$where`n``````json`n$m`n``````"
             Add-Content -Path $env:GITHUB_STEP_SUMMARY -Value $md -Encoding UTF8
           }
