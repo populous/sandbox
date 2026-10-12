@@ -24,6 +24,7 @@ Perplexity 쓰레드의 sandbox 상태를 **git 브랜치 1개 ↔ 쓰레드 1�
 - Perplexity sandbox는 **휘발성**입니다. 영속 상태는 origin의 `thread/<id>` 브랜치뿐입니다.
 - 사용자는 sandbox 셸에 직접 들어가지 않습니다. 대신 **동일한 상태를 git으로 받습니다**.
 - 사용자가 브랜치에 push한 변경은 Perplexity가 다음 턴 시작 시 `pull`로 받습니다.
+- **GitHub가 sandbox 저장소를 대체합니다.** 결과 파일은 Perplexity 아티팩트나 GitHub Actions artifact로 저장하지 않고, 모두 `thread/<id>` 브랜치에 커밋합니다. 쓰레드 응답에는 파일 첨부 대신 브랜치·경로 링크를 남깁니다.
 
 ## 2. 식별자
 
@@ -32,7 +33,7 @@ Perplexity 쓰레드의 sandbox 상태를 **git 브랜치 1개 ↔ 쓰레드 1�
 | Thread ID | 쓰레드 UUID의 앞 8자 | `f7bfd4da` |
 | Branch | `thread/<id>` | `thread/f7bfd4da` |
 | Folder | `threads/<id>/` | `threads/f7bfd4da/` |
-| Run ID | `<UTC yyyymmddTHHMMSSZ>-<label>` | `20261012T042607Z-calc` |
+| Run ID | `<UTC yyyymmddTHHMMSSZ>-<label>[-win]` | `20261012T042607Z-calc` (Perplexity), `...-smoke-win` (Windows runner) |
 
 ## 3. 폴더 구조
 
@@ -46,7 +47,7 @@ threads/<id>/
 └── runs/<run-id>/     # 실행 1회 = 폴더 1개 (불변)
     ├── command.txt
     ├── run.log
-    ├── outputs/       # 명령이 $PPLX_RUN_OUT 에 쓴 파일
+    ├── outputs/       # 명령이 $PPLX_RUN_OUT 에 쓴 파일 (= 결과물, git에 커밋)
     └── manifest.json  # exit_code, git_head, host, files[{path,sha256,bytes}]
 ```
 
@@ -83,7 +84,8 @@ Actor: perplexity | user
 4. `journal.jsonl`은 append-only입니다.
 5. **checkpoint 가드**: 5 MB 초과 파일과 토큰 패턴(`ghp_`, `github_pat_`, `sk-`, `AKIA`, `xox*`, private key)이 있으면 커밋을 거부합니다.
 6. 충돌 시 Perplexity는 force-push하지 않고, 사용자에게 보고한 뒤 멈춥니다.
-7. 공개 저장소이므로 개인정보, 비밀키, 비공개 데이터는 `context/`에 쓰지 않습니다.
+7. 결과 저장소는 git 하나뿐입니다. Perplexity 아티팩트 공유, Actions `upload-artifact`는 사용하지 않습니다 (사용자가 명시적으로 요청할 때만 예외).
+8. 공개 저장소이므로 개인정보, 비밀키, 비공개 데이터는 `context/`에 쓰지 않습니다.
 
 ## 7. 턴 수명주기 (Perplexity 측)
 
