@@ -9,5 +9,8 @@
       ]
     }
   },
-  "postCreateCommand": "python -m pip install --upgrade pip pytest && python -m pip install -e ."
+  "postCreateCommand": "python -m pip install --upgrade pip pytest && python -m pip install -e .",
+  "features": {
+    "ghcr.io/devcontainers/features/github-cli:1": {}
+  }
 }
