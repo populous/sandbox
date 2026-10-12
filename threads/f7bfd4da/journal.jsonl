@@ -2,3 +2,5 @@
 {"ts": "2026-10-12T04:27:20Z", "event": "run", "actor": "perplexity", "label": "pytest", "exit_code": 0, "path": "threads/f7bfd4da/runs/20261012T042716Z-pytest"}
 {"ts": "2026-10-12T04:27:20Z", "event": "note", "actor": "perplexity", "chars": 160}
 {"ts": "2026-10-12T04:27:20Z", "event": "checkpoint", "actor": "perplexity", "message": "connect thread, first pytest run"}
+{"ts": "2026-10-12T04:35:50Z", "event": "note", "actor": "perplexity", "chars": 84}
+{"ts": "2026-10-12T04:35:51Z", "event": "checkpoint", "actor": "perplexity", "message": "decision: no artifacts, git only"}
