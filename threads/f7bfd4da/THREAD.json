@@ -1,0 +1,10 @@
+{
+  "protocol": "pplx-thread/1",
+  "thread_id": "f7bfd4da",
+  "thread_url": "https://www.perplexity.ai/computer/tasks/f7bfd4da-a5a8-43b5-9943-df7c98867e6f",
+  "title": "User sandbox: Windows runner + Thread Sync Protocol",
+  "branch": "thread/f7bfd4da",
+  "base": "main",
+  "created_utc": "2026-10-12T04:27:14Z",
+  "status": "open"
+}
