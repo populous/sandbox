@@ -1,0 +1,30 @@
+{
+  "protocol": "pplx-thread/1",
+  "thread_id": "f7bfd4da",
+  "label": "pytest",
+  "command": "python3 -m pip install -q -e . pytest >/dev/null 2>&1; python3 -m pytest -q",
+  "cwd": ".",
+  "exit_code": 0,
+  "started_utc": "2026-10-12T04:27:16Z",
+  "finished_utc": "2026-10-12T04:27:20Z",
+  "git_head": "be3404e1b36ed110d6c3b92e9bf111b049484773",
+  "actor": "perplexity",
+  "host": {
+    "system": "Linux",
+    "release": "6.1.155",
+    "machine": "x86_64",
+    "python": "3.14.3"
+  },
+  "files": [
+    {
+      "path": "command.txt",
+      "sha256": "a26f2ac6feb97a0a2cd622b962fa1668b68ab5f69fb58b62162eed0f11a7ec98",
+      "bytes": 76
+    },
+    {
+      "path": "run.log",
+      "sha256": "9310d484212a1fe2c33b4b8accdf50a2639f09ba039354f8448f8aa8d173e1ff",
+      "bytes": 98
+    }
+  ]
+}
