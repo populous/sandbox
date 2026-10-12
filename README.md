@@ -1,3 +1,9 @@
+> **이전 안내 (2026-10-12)**
+> 이 저장소의 내용은 비공개 저장소 `populous/pplx-sandbox`로 통합되었습니다.
+> - `grammar/`, `src/`, `tests/test_parser.py`, `.devcontainer/`는 커밋 이력째 이전되었습니다.
+> - Windows runner(`sandbox-run`), Thread Sync Protocol, 쓰레드 `thread/f7bfd4da` 기록은 pplx-sandbox에서 계속 관리합니다.
+> - 이 저장소는 쓰기 가능한 상태로 유지되지만 새 작업은 pplx-sandbox에서 진행합니다.
+
 # Arithmetic Grammar and Register Flow
 
 This repository provides a compact arithmetic grammar using EBNF and ANTLR-style syntax while keeping runtime state in a register-driven flow. The goal is to preserve a clean grammar boundary and move value handling to named registers.
