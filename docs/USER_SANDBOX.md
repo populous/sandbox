@@ -94,7 +94,7 @@ git switch thread/f7bfd4da; git pull     # 결과는 threads/f7bfd4da/runs/ 에 
 populous/sandbox에서 sandbox-run을 ref=<branch>로 실행해줘.
 command: <PowerShell 명령>
 run_label: <라벨>
-완료되면 manifest.json의 exit_code와 artifact 목록을 요약해줘.
+완료되면 manifest.json의 exit_code와 outputs 파일 목록을 요약해줘.
 ```
 
 ## 5. 보안 (공개 저장소)
