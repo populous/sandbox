@@ -9,3 +9,7 @@
 ## 2026-10-12T04:35:50Z (perplexity)
 
 결정: GitHub가 sandbox 저장소를 대체. 결과는 Perplexity 아티팩트/Actions artifact 없이 thread 브랜치에 커밋.
+
+## 2026-10-12T04:43:56Z (perplexity)
+
+PR #3 (52b4322), PR #4 (5d5907e) squash 병합. thread 브랜치에 main 반영.

@@ -4,3 +4,5 @@
 {"ts": "2026-10-12T04:27:20Z", "event": "checkpoint", "actor": "perplexity", "message": "connect thread, first pytest run"}
 {"ts": "2026-10-12T04:35:50Z", "event": "note", "actor": "perplexity", "chars": 84}
 {"ts": "2026-10-12T04:35:51Z", "event": "checkpoint", "actor": "perplexity", "message": "decision: no artifacts, git only"}
+{"ts": "2026-10-12T04:43:56Z", "event": "note", "actor": "perplexity", "chars": 64}
+{"ts": "2026-10-12T04:43:56Z", "event": "checkpoint", "actor": "perplexity", "message": "merged PR #3 #4, synced main"}
