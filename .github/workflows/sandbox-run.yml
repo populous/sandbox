@@ -1,0 +1,77 @@
+name: sandbox-run
+
+# User-defined sandbox: runs a command on the owner's self-hosted runner
+# (WSL2 / Linux workstation) and stores log + sha256 manifest as artifacts.
+#
+# SECURITY (public repository):
+# - Only workflow_dispatch is allowed. No push / pull_request triggers, so
+#   fork PRs can never reach the self-hosted runner.
+# - The job is additionally gated to the repository owner.
+
+on:
+  workflow_dispatch:
+    inputs:
+      command:
+        description: "Shell command to run in the sandbox (bash)"
+        required: true
+        default: "python -m pytest -q"
+      workdir:
+        description: "Working directory relative to repo root"
+        required: false
+        default: "."
+      timeout_minutes:
+        description: "Job timeout in minutes"
+        required: false
+        default: "30"
+      run_label:
+        description: "Free-form label stored in the manifest"
+        required: false
+        default: "manual"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: user-sandbox
+  cancel-in-progress: false
+
+jobs:
+  run:
+    if: github.actor == github.repository_owner
+    runs-on: [self-hosted, linux, user-sandbox]
+    timeout-minutes: ${{ fromJSON(inputs.timeout_minutes) }}
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+        with:
+          clean: true
+
+      - name: Run command in sandbox
+        id: run
+        env:
+          SANDBOX_COMMAND: ${{ inputs.command }}
+          SANDBOX_WORKDIR: ${{ inputs.workdir }}
+          SANDBOX_LABEL: ${{ inputs.run_label }}
+          SANDBOX_OUT: ${{ runner.temp }}/sandbox-out
+        run: bash scripts/sandbox/run.sh
+
+      - name: Upload sandbox artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: sandbox-run-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/sandbox-out
+          if-no-files-found: warn
+          retention-days: 30
+
+      - name: Job summary
+        if: always()
+        run: |
+          if [ -f "${{ runner.temp }}/sandbox-out/manifest.json" ]; then
+            {
+              echo "## sandbox-run"
+              echo '```json'
+              cat "${{ runner.temp }}/sandbox-out/manifest.json"
+              echo '```'
+            } >> "$GITHUB_STEP_SUMMARY"
+          fi
