@@ -1,7 +1,7 @@
 name: sandbox-run
 
 # User-defined sandbox: runs a command on the owner's self-hosted runner
-# (WSL2 / Linux workstation) and stores log + sha256 manifest as artifacts.
+# (Windows PC) and stores log + sha256 manifest as artifacts.
 #
 # SECURITY (public repository):
 # - Only workflow_dispatch is allowed. No push / pull_request triggers, so
@@ -12,7 +12,7 @@ on:
   workflow_dispatch:
     inputs:
       command:
-        description: "Shell command to run in the sandbox (bash)"
+        description: "PowerShell command to run in the sandbox"
         required: true
         default: "python -m pytest -q"
       workdir:
@@ -31,6 +31,10 @@ on:
 permissions:
   contents: read
 
+defaults:
+  run:
+    shell: powershell
+
 concurrency:
   group: user-sandbox
   cancel-in-progress: false
@@ -38,7 +42,7 @@ concurrency:
 jobs:
   run:
     if: github.actor == github.repository_owner
-    runs-on: [self-hosted, linux, user-sandbox]
+    runs-on: [self-hosted, windows, user-sandbox]
     timeout-minutes: ${{ fromJSON(inputs.timeout_minutes) }}
     steps:
       - name: Check out repository
@@ -53,7 +57,7 @@ jobs:
           SANDBOX_WORKDIR: ${{ inputs.workdir }}
           SANDBOX_LABEL: ${{ inputs.run_label }}
           SANDBOX_OUT: ${{ runner.temp }}/sandbox-out
-        run: bash scripts/sandbox/run.sh
+        run: powershell -NoProfile -ExecutionPolicy Bypass -File scripts\sandbox\run.ps1
 
       - name: Upload sandbox artifacts
         if: always()
@@ -66,12 +70,11 @@ jobs:
 
       - name: Job summary
         if: always()
+        env:
+          MANIFEST: ${{ runner.temp }}/sandbox-out/manifest.json
         run: |
-          if [ -f "${{ runner.temp }}/sandbox-out/manifest.json" ]; then
-            {
-              echo "## sandbox-run"
-              echo '```json'
-              cat "${{ runner.temp }}/sandbox-out/manifest.json"
-              echo '```'
-            } >> "$GITHUB_STEP_SUMMARY"
-          fi
+          if (Test-Path $env:MANIFEST) {
+            $m = Get-Content -Raw -Encoding UTF8 $env:MANIFEST
+            $md = "## sandbox-run`n``````json`n$m`n``````"
+            Add-Content -Path $env:GITHUB_STEP_SUMMARY -Value $md -Encoding UTF8
+          }
